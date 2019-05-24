@@ -1,0 +1,222 @@
+basePath: /v1
+host: localhost:6543
+info: {title: Form3 Payments API Test - Pawel Martuszewski, version: '1'}
+produces: [application/vnd.api+json, application/json]
+schemes: [http]
+swagger: '2.0'
+
+paths:
+  /payments:
+    get:
+      parameters:
+      - description: Filter by attribute
+        in: query
+        items: {format: uuid, type: string}
+        name: filter[organisation_id]
+        required: false
+        type: array
+      responses:
+        200:
+          description: List of payment details
+          schema: {$ref: '#/definitions/PaymentDetailsListResponse'}
+      summary: List payments
+    post:
+      consumes: [application/vnd.api+json, application/json]
+      parameters:
+      - in: body
+        name: Payment creation request
+        schema: {$ref: '#/definitions/PaymentCreation'}
+      responses:
+        201:
+          description: Payment creation response
+          schema: {$ref: '#/definitions/PaymentCreationResponse'}
+        400:
+          description: Payment creation error
+          schema: {$ref: '#/definitions/ApiError'}
+      summary: Create payment
+    patch:
+      consumes: [application/vnd.api+json, application/json]
+      parameters:
+      - in: body
+        name: Payment update request
+        schema: {$ref: '#/definitions/Payment'}
+      responses:
+        202:
+          description: Payment update response
+          schema: {$ref: '#/definitions/Payment'}
+        400:
+          description: Payment creation error
+          schema: {$ref: '#/definitions/ApiError'}
+
+  /payments/health:
+    get:
+      responses:
+        200:
+          description: Payment service health
+          schema: {$ref: '#/definitions/Health'}
+      summary: Fetch payment service health
+  /payments/{id}:
+    get:
+      parameters:
+      - {description: Payment Id, format: uuid, in: path, name: id, required: true,
+        type: string}
+      responses:
+        200:
+          description: Payment details
+          schema: {$ref: '#/definitions/PaymentDetailsResponse'}
+      summary: Fetch payment
+    delete:
+      consumes: [application/vnd.api+json, application/json]
+      parameters:
+      - in: path
+        name: id
+        format: uuid
+        description: Payment Id
+        type: string
+      responses:
+        204:
+          description: Payment deletion response
+        400:
+          description: Payment deletion error
+          schema: {$ref: '#/definitions/ApiError'}
+
+definitions:
+  ApiError:
+    properties:
+      error_code: {format: uuid, type: string}
+      error_message: {type: string}
+    type: object
+
+  Health:
+    properties:
+      status:
+        description: Status of the service. Can either be `up` or `down`.
+        enum: [up, down]
+        example: up
+        type: string
+    type: object
+
+  Links:
+    properties:
+      first: {description: Link to the first resource in the list, example: 'http://localhost:6543/v1/api_name/resource_type',
+        type: string}
+      last: {description: Link to the last resource in the list, example: 'http://localhost:6543/v1/api_name/resource_type',
+        type: string}
+      next: {description: Link to the next resource in the list, example: 'http://localhost:6543/v1/api_name/resource_type',
+        type: string}
+      prev: {description: Link to the previous resource in the list, example: 'http://localhost:6543/v1/api_name/resource_type',
+        type: string}
+      self: {description: Link to this resource type, example: 'http://localhost:6543/v1/api_name/resource_type',
+        type: string}
+    type: object
+
+  Payment:
+    properties:
+      id:
+        description: Unique resource ID
+        example: 7826c3cb-d6fd-41d0-b187-dc23ba928772
+        format: uuid
+        type: string
+      organisation_id:
+        description: Unique ID of the organisation this resource is created by
+        example: ee2fb143-6dfe-4787-b183-ca8ddd4164d2
+        format: uuid
+        type: string
+      type:
+        description: Name of the resource type
+        example: payments
+        pattern: '^[A-Za-z_]*$'
+        type: string
+      version:
+        description: Version number
+        example: 0
+        minimum: 0
+        type: integer
+      created_on:
+        format: date-time
+        type: string
+        x-nullable: true
+      modified_on:
+        format: date-time
+        type: string
+        x-nullable: true
+      attributes:
+        properties:
+          amount:
+            description: Amount of money moved between the instructing agent and instructed
+              agent
+            example: '10.00'
+            pattern: ^[0-9.]{0,20}$
+            type: string
+          currency:
+            description: Currency of the transaction amount. Currency code as defined
+              in [ISO 4217](http://www.iso.org/iso/home/standards/currency_codes.htm)
+            example: EUR
+            type: string
+            x-length: 3
+          processing_date:
+            description: 'Date on which the payment is to be debited from the debtor
+              account. Formatted according to ISO 8601 format: YYYY-MM-DD.'
+            example: '2015-02-12'
+            format: date
+            type: string
+          reference:
+            description: Payment reference for beneficiary use
+            example: rent for oct
+            type: string
+            x-length: 18
+          beneficiary_party:
+            properties:
+              account_name:
+                description: Name of beneficiary as given with account
+                example: James Bond
+                type: string
+                x-length: 40
+              account_number:
+                description: Beneficiary account number
+                example: '71268996'
+                type: string
+                x-length: 34
+          debtor_party:
+            properties:
+              account_name:
+                description: Name of debtor as given with account
+                example: Jane Bond
+                type: string
+                x-length: 40
+              account_number:
+                description: Debtor account number. Allows upper case and numeric
+                  characters.
+                example: '12345678'
+                type: string
+                x-length: 34
+            type: object
+        type: object
+    required: [id, organisation_id, attributes]
+    type: object
+
+  PaymentCreation:
+    properties:
+      data: {$ref: '#/definitions/Payment'}
+    type: object
+
+  PaymentCreationResponse:
+    properties:
+      data: {$ref: '#/definitions/Payment'}
+      links: {$ref: '#/definitions/Links'}
+    type: object
+
+  PaymentDetailsListResponse:
+    properties:
+      data:
+        items: {$ref: '#/definitions/Payment'}
+        type: array
+      links: {$ref: '#/definitions/Links'}
+    type: object
+
+  PaymentDetailsResponse:
+    properties:
+      data: {$ref: '#/definitions/Payment'}
+      links: {$ref: '#/definitions/Links'}
+    type: object
+

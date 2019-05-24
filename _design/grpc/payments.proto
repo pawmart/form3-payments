@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package form3.payments;
+option go_package = "payments";
+
+service Payments {
+    rpc List(PaymentDataListRequest) returns (PaymentDataListResponse) {}
+    rpc Get(SimpleEntityRequest) returns (PaymentData) {}
+    rpc Create(PaymentData) returns (PaymentData) {}
+    rpc Update(PaymentData) returns (PaymentData) {}
+    rpc Delete(SimpleEntityRequest) returns (SimpleResponse) {}
+}
+
+message PaymentDataListRequest {
+    string organisation_id = 1;
+    string page_number = 2;
+    string page_size = 3;
+}
+
+message PaymentDataListResponse {
+    repeated Payment data = 1;
+}
+
+message PaymentData {
+    Payment data = 1;
+}
+
+message SimpleEntityRequest {
+    string id = 1;
+}
+
+message SimpleResponse {
+    bool successfull = 1;
+}
+
+message Payment {
+    message Attributes {
+        string description = 1;
+        string currency = 2;
+        string processing_date = 3;
+        string reference = 4;
+        Party beneficiary_party = 5;
+        Party debtor_party = 6;
+    }
+    message Party {
+        string account_name = 1;
+        string account_number = 2;
+    }
+    string id = 1;
+    string organisation_id = 2;
+    string type = 3;
+    int32 version = 4;
+    string created_on = 5;
+    string modified_on = 6;
+    Attributes attributes = 7;
+
+}
