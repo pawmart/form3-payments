@@ -105,6 +105,7 @@ func (a *featureState) callEndpoint(method string, endpoint string, req *http.Re
 }
 
 func (a *featureState) iSendRequestTo(method, endpoint string) (err error) {
+
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf(err.Error())
@@ -114,10 +115,14 @@ func (a *featureState) iSendRequestTo(method, endpoint string) (err error) {
 }
 
 func (a *featureState) iSendARequestToWith(method, endpoint string, body *gherkin.DocString) (err error) {
+
 	req, err := http.NewRequest(method, endpoint, strings.NewReader(body.Content))
 	if err != nil {
 		return fmt.Errorf(err.Error())
 	}
+
+	req.Header.Set("Content-Type", "application/json")
+
 	if a.apikey != "" {
 		req.Header.Set("X-APIKEY", "abc")
 	}

@@ -36,7 +36,6 @@ func NewForm3paymentsAPI(spec *loads.Document) *Form3paymentsAPI {
 		APIKeyAuthenticator: security.APIKeyAuth,
 		BearerAuthenticator: security.BearerAuth,
 		JSONConsumer:        runtime.JSONConsumer(),
-		BinConsumer:         runtime.ByteStreamConsumer(),
 		JSONProducer:        runtime.JSONProducer(),
 		DeletePaymentsIDHandler: DeletePaymentsIDHandlerFunc(func(params DeletePaymentsIDParams) middleware.Responder {
 			return middleware.NotImplemented("operation DeletePaymentsID has not yet been implemented")
@@ -83,8 +82,6 @@ type Form3paymentsAPI struct {
 
 	// JSONConsumer registers a consumer for a "application/json" mime type
 	JSONConsumer runtime.Consumer
-	// BinConsumer registers a consumer for a "application/octet-stream" mime type
-	BinConsumer runtime.Consumer
 
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer runtime.Producer
@@ -160,10 +157,6 @@ func (o *Form3paymentsAPI) Validate() error {
 		unregistered = append(unregistered, "JSONConsumer")
 	}
 
-	if o.BinConsumer == nil {
-		unregistered = append(unregistered, "BinConsumer")
-	}
-
 	if o.JSONProducer == nil {
 		unregistered = append(unregistered, "JSONProducer")
 	}
@@ -230,9 +223,6 @@ func (o *Form3paymentsAPI) ConsumersFor(mediaTypes []string) map[string]runtime.
 
 		case "application/vnd.api+json":
 			result["application/vnd.api+json"] = o.JSONConsumer
-
-		case "application/octet-stream":
-			result["application/octet-stream"] = o.BinConsumer
 
 		}
 

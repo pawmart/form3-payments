@@ -73,8 +73,7 @@ func init() {
       "post": {
         "consumes": [
           "application/vnd.api+json",
-          "application/json",
-          "application/octet-stream"
+          "application/json"
         ],
         "summary": "Create payment",
         "parameters": [
@@ -104,8 +103,7 @@ func init() {
       "patch": {
         "consumes": [
           "application/vnd.api+json",
-          "application/json",
-          "application/octet-stream"
+          "application/json"
         ],
         "parameters": [
           {
@@ -452,8 +450,7 @@ func init() {
       "post": {
         "consumes": [
           "application/vnd.api+json",
-          "application/json",
-          "application/octet-stream"
+          "application/json"
         ],
         "summary": "Create payment",
         "parameters": [
@@ -483,8 +480,7 @@ func init() {
       "patch": {
         "consumes": [
           "application/vnd.api+json",
-          "application/json",
-          "application/octet-stream"
+          "application/json"
         ],
         "parameters": [
           {

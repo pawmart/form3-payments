@@ -28,7 +28,7 @@ paths:
           schema: {$ref: '#/definitions/PaymentDetailsListResponse'}
       summary: List payments
     post:
-      consumes: [application/vnd.api+json, application/json, application/octet-stream]
+      consumes: [application/vnd.api+json, application/json]
       parameters:
       - in: body
         name: Payment creation request
@@ -42,7 +42,7 @@ paths:
           schema: {$ref: '#/definitions/ApiError'}
       summary: Create payment
     patch:
-      consumes: [application/vnd.api+json, application/json, application/octet-stream]
+      consumes: [application/vnd.api+json, application/json]
       parameters:
       - in: body
         name: Payment update request

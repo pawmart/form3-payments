@@ -11,7 +11,6 @@ Package restapi Form3 Payments API Test - Pawel Martuszewski
 
     Consumes:
     - application/json
-    - application/octet-stream
 
     Produces:
     - application/json
