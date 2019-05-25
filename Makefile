@@ -39,3 +39,13 @@ run: ## Run
 
 clear: ## Clear
 	docker rm ${APP_NAME}
+
+validate: ## Validate swagger
+	${GOPATH}/bin/swagger validate ./swagger/swagger.yml
+
+gen: validate ## Generate server from swagger
+	${GOPATH}/bin/swagger generate server \
+		--target=./ \
+		--spec=./swagger/swagger.yml \
+		--exclude-main \
+		--name=form3payments

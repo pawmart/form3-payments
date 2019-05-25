@@ -5,7 +5,7 @@ Feature: Check health
 
   Background:
     Given I am authenticated to the API
-    When I send a "GET" request to "/health"
+    When I send a "GET" request to "/v1/health"
 
   Scenario: Success
     Then the response code should be 200

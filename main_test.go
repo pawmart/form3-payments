@@ -3,19 +3,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
+	"github.com/pawmart/form3-payments/models"
+	"github.com/pawmart/form3-payments/restapi/operations"
+
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
-	"github.com/gin-gonic/gin"
 	"github.com/pawmart/form3-payments/storage"
 )
 
+var handler http.Handler
+
 type featureState struct {
+	api    *operations.Form3paymentsAPI
 	resp   *httptest.ResponseRecorder
-	router *gin.Engine
 	apikey string
 }
 
@@ -26,7 +31,7 @@ func (a *featureState) resetState(interface{}) {
 
 func (a *featureState) prepareSuite() {
 
-	a.router = setupRouter()
+	handler = getAPIServer().GetHandler()
 
 	db, _ := storage.New().Db()
 	db.DropDatabase()
@@ -35,6 +40,8 @@ func (a *featureState) prepareSuite() {
             "id" : "b8dfdf10-33fa-4301-b859-e19853641651",
             "type": "Payments",
             "organisation_id": "743d5b63-8e6f-432e-a8fa-c5d8d2ee5fcb",
+            "created_on": 1558772378,
+            "modified_on": 1558772378,
             "attributes": {
                 "amount": "100.21",
                 "currency": "GBP",
@@ -54,6 +61,8 @@ func (a *featureState) prepareSuite() {
             "id" : "a8dfdf10-33fa-4301-b859-e19853641655",
             "type": "Payments",
             "organisation_id": "743d5b63-8e6f-432e-a8fa-c5d8d2ee5fcb",
+            "created_on": 1558772378,
+            "modified_on": 1558772378,
             "attributes": {
                 "amount": "3.21",
                 "currency": "GBP",
@@ -84,27 +93,35 @@ func (a *featureState) prepareSuite() {
 	}
 }
 
-func (a *featureState) iSendRequestTo(method, endpoint string) (err error) {
-	req, err := http.NewRequest(method, endpoint, nil)
-	if err != nil {
-		return
-	}
+func (a *featureState) callEndpoint(method string, endpoint string, req *http.Request) {
+
 	if a.apikey != "" {
 		req.Header.Set("X-APIKEY", "abc")
 	}
-	a.router.ServeHTTP(a.resp, req)
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	a.resp = rr
+}
+
+func (a *featureState) iSendRequestTo(method, endpoint string) (err error) {
+	req, err := http.NewRequest(method, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf(err.Error())
+	}
+	a.callEndpoint(method, endpoint, req)
 	return
 }
 
 func (a *featureState) iSendARequestToWith(method, endpoint string, body *gherkin.DocString) (err error) {
 	req, err := http.NewRequest(method, endpoint, strings.NewReader(body.Content))
 	if err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
 	if a.apikey != "" {
 		req.Header.Set("X-APIKEY", "abc")
 	}
-	a.router.ServeHTTP(a.resp, req)
+	a.callEndpoint(method, endpoint, req)
 	return
 }
 
@@ -116,27 +133,32 @@ func (a *featureState) theResponseCodeShouldBe(code int) error {
 }
 
 func (a *featureState) theJSONResponseShouldContainAnError() (err error) {
-	var error APIError
+	var error models.APIError
 	if err = json.Unmarshal([]byte(a.resp.Body.String()), &error); err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
 	if err != nil {
-		return fmt.Errorf("could not unmarshal error response", error, err.Error(), a.resp.Body.String())
+		return fmt.Errorf("could not unmarshal error response", error, err.Error(), a.resp)
 	}
-	if len(error.Message) > 0 && len(error.Code) > 0 {
+	if len(error.ErrorMessage) > 0 && len(error.ErrorCode) > 0 {
 		return
+	} else {
+		return fmt.Errorf("no error message")
 	}
 	return
 }
 
 func (a *featureState) theJSONResponseShouldContainPaymentData() (err error) {
-	var pd *PaymentData
+	var pd *models.PaymentCreationResponse
 	if err = json.Unmarshal([]byte(a.resp.Body.String()), &pd); err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
 	if err != nil {
 		return fmt.Errorf("could not unmarshal payment data response", pd, err.Error(), a.resp.Body.String())
 	}
+
+	log.Print(pd)
+
 	if pd.Data != nil && len(pd.Data.ID) > 0 {
 		return
 	}
@@ -144,10 +166,11 @@ func (a *featureState) theJSONResponseShouldContainPaymentData() (err error) {
 }
 
 func (a *featureState) theResponseShouldHaveHealthStatusUp() (err error) {
-	var pd *Health
+	var pd *models.Health
 	if err = json.Unmarshal([]byte(a.resp.Body.String()), &pd); err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
+
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response", pd, err.Error(), a.resp.Body.String())
 	}
@@ -158,9 +181,9 @@ func (a *featureState) theResponseShouldHaveHealthStatusUp() (err error) {
 }
 
 func (a *featureState) theJSONResponseShouldContainPaymentDataWithReferenceAttributeOf(arg1 string) (err error) {
-	var pd *PaymentData
+	var pd *models.PaymentDetailsResponse
 	if err = json.Unmarshal([]byte(a.resp.Body.String()), &pd); err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response", pd, err.Error(), a.resp.Body.String())
@@ -172,16 +195,32 @@ func (a *featureState) theJSONResponseShouldContainPaymentDataWithReferenceAttri
 }
 
 func (a *featureState) theJSONResponseShouldContainPaymentDataCollection() (err error) {
-	var pd *PaymentDataList
+	var pd *models.PaymentDetailsListResponse
 	if err = json.Unmarshal([]byte(a.resp.Body.String()), &pd); err != nil {
-		return
+		return fmt.Errorf(err.Error())
 	}
 
+	if pd.Data == nil || len(pd.Data) < 1 {
+		return fmt.Errorf("no collection returned")
+	}
 	if pd.Data[0].ID == "" {
 		return fmt.Errorf("no collection record returned")
 	}
-	if len(pd.Data) < 2 {
-		return fmt.Errorf("no collection returned")
+
+	return
+}
+
+func (a *featureState) theJSONResponseShouldContainNoPaymentDataCollection() (err error) {
+	var pd *models.PaymentDetailsListResponse
+	if err = json.Unmarshal([]byte(a.resp.Body.String()), &pd); err != nil {
+		fmt.Errorf(err.Error())
+	}
+
+	log.Print(pd)
+	log.Print(pd.Data)
+
+	for _, v := range pd.Data {
+		return fmt.Errorf("payment data exists and it should not", pd, a.resp.Body.String(), v)
 	}
 
 	return
@@ -205,6 +244,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the response code should be (\d+)$`, api.theResponseCodeShouldBe)
 	s.Step(`^the JSON response should contain an error$`, api.theJSONResponseShouldContainAnError)
 	s.Step(`^the JSON response should contain payment data$`, api.theJSONResponseShouldContainPaymentData)
+	s.Step(`^the JSON response should contain no payment data collection$`, api.theJSONResponseShouldContainNoPaymentDataCollection)
 	s.Step(`^the response should have health status up$`, api.theResponseShouldHaveHealthStatusUp)
 	s.Step(`^the JSON response should contain payment data collection$`, api.theJSONResponseShouldContainPaymentDataCollection)
 	s.Step(`^the JSON response should contain payment data with reference attribute of "([^"]*)"$`, api.theJSONResponseShouldContainPaymentDataWithReferenceAttributeOf)

@@ -1,25 +1,61 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"log"
+
+	"github.com/alexflint/go-arg"
+	"github.com/go-openapi/loads"
+
+	"github.com/pawmart/form3-payments/restapi"
+	"github.com/pawmart/form3-payments/restapi/operations"
 )
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
-	r.GET("/health", HealthCheck)
-	v1 := r.Group("/v1")
-	{
-		v1.Use(authRequiredMiddleware())
-		v1.GET("/payments", GetPayments)
-		v1.GET("/payments/:id", GetSinglePayment)
-		v1.POST("/payments", CreatePayment)
-		v1.PATCH("/payments", UpdatePayment)
-		v1.DELETE("/payments/:id", DeletePayment)
+type cliArgs struct {
+	Port int `arg:"-p,help:port to listen to"`
+}
+
+var (
+	args = &cliArgs{
+		Port: 6543,
 	}
-	return r
+)
+
+func getAPIServer() *restapi.Server {
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// TODO: addd middleware
+	// TODO: ensure api key header is checked.
+	// TODO: inspect DATES on resource creation
+	// TODO: update modified on date on update and change status code to 200
+	// TODO: remove logs
+	// TODO: extract uuid logic and similar to the helper reducing dependencies
+	// TODO: try to match origigal json as close as possible
+
+	api := operations.NewForm3paymentsAPI(swaggerSpec)
+	api.GetHealthHandler = operations.GetHealthHandlerFunc(GetHealth)
+	api.GetPaymentsHandler = operations.GetPaymentsHandlerFunc(GetPayments)
+	api.PostPaymentsHandler = operations.PostPaymentsHandlerFunc(CreatePayment)
+	api.PatchPaymentsHandler = operations.PatchPaymentsHandlerFunc(UpdatePayment)
+	api.GetPaymentsIDHandler = operations.GetPaymentsIDHandlerFunc(FetchPayment)
+	api.DeletePaymentsIDHandler = operations.DeletePaymentsIDHandlerFunc(DeletePayment)
+	server := restapi.NewServer(api)
+	server.ConfigureAPI()
+
+	return server
 }
 
 func main() {
-	r := setupRouter()
-	r.Run(":6543")
+	arg.MustParse(args)
+
+	server := getAPIServer()
+	defer server.Shutdown()
+
+	server.Port = args.Port
+
+	if err := server.Serve(); err != nil {
+		log.Fatalln(err)
+	}
 }

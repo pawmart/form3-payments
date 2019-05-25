@@ -13,6 +13,7 @@ Feature: Update payment
     {
         "data": {
             "id": "a8dfdf10-33fa-4301-b859-e19853641655",
+            "organisation_id": "743d5b63-8e6f-432e-a8fa-c5d8d2ee5fcb",
             "type": "Payment",
             "attributes": {
                 "reference": "abc"
@@ -20,4 +21,4 @@ Feature: Update payment
         }
     }
     """
-    And the response code should be 202
+    And the response code should be 200

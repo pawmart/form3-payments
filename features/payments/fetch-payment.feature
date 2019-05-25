@@ -12,6 +12,10 @@ Feature: Fetch a payment
     Then the response code should be 200
 
   Scenario: Fail to get a payment
-    When I send a "GET" request to "/v1/payments/aaaaaf10-33fa-4301-b859-e5555555555"
+    When I send a "GET" request to "/v1/payments/f3c5f34a-3985-44b2-bb1d-a51ffda32baf"
     Then the response code should be 404
     And the JSON response should contain an error
+
+  Scenario: Fail to get a payment due to non uuid
+    When I send a "GET" request to "/v1/payments/abc"
+    Then the response code should be 422

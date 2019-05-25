@@ -6,10 +6,17 @@ schemes: [http]
 swagger: '2.0'
 
 paths:
+  /health:
+    get:
+      responses:
+        200:
+          description: Payment service health
+          schema: {$ref: '#/definitions/Health'}
+      summary: Fetch payment service health
   /payments:
     get:
       parameters:
-      - description: Filter by attribute
+      - description: Filter by organisation id
         in: query
         items: {format: uuid, type: string}
         name: filter[organisation_id]
@@ -21,7 +28,7 @@ paths:
           schema: {$ref: '#/definitions/PaymentDetailsListResponse'}
       summary: List payments
     post:
-      consumes: [application/vnd.api+json, application/json]
+      consumes: [application/vnd.api+json, application/json, application/octet-stream]
       parameters:
       - in: body
         name: Payment creation request
@@ -35,26 +42,20 @@ paths:
           schema: {$ref: '#/definitions/ApiError'}
       summary: Create payment
     patch:
-      consumes: [application/vnd.api+json, application/json]
+      consumes: [application/vnd.api+json, application/json, application/octet-stream]
       parameters:
       - in: body
         name: Payment update request
-        schema: {$ref: '#/definitions/Payment'}
-      responses:
-        202:
-          description: Payment update response
-          schema: {$ref: '#/definitions/Payment'}
-        400:
-          description: Payment creation error
-          schema: {$ref: '#/definitions/ApiError'}
-
-  /payments/health:
-    get:
+        schema: {$ref: '#/definitions/PaymentUpdate'}
       responses:
         200:
-          description: Payment service health
-          schema: {$ref: '#/definitions/Health'}
-      summary: Fetch payment service health
+          description: Payment update response
+        400:
+          description: Payment update error
+          schema: {$ref: '#/definitions/ApiError'}
+        404:
+          description: Payment update not found
+          schema: {$ref: '#/definitions/ApiError'}
   /payments/{id}:
     get:
       parameters:
@@ -64,26 +65,26 @@ paths:
         200:
           description: Payment details
           schema: {$ref: '#/definitions/PaymentDetailsResponse'}
+        404:
+          description: Resource not found
+          schema: {$ref: '#/definitions/ApiError'}
       summary: Fetch payment
     delete:
       consumes: [application/vnd.api+json, application/json]
       parameters:
-      - in: path
-        name: id
-        format: uuid
-        description: Payment Id
-        type: string
+      - {description: Payment Id, format: uuid, in: path, name: id, required: true,
+        type: string}
       responses:
         204:
           description: Payment deletion response
-        400:
+        404:
           description: Payment deletion error
           schema: {$ref: '#/definitions/ApiError'}
 
 definitions:
   ApiError:
     properties:
-      error_code: {format: uuid, type: string}
+      error_code: {type: string}
       error_message: {type: string}
     type: object
 
@@ -115,12 +116,12 @@ definitions:
       id:
         description: Unique resource ID
         example: 7826c3cb-d6fd-41d0-b187-dc23ba928772
-        format: uuid
+        pattern: ^[[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$
         type: string
       organisation_id:
         description: Unique ID of the organisation this resource is created by
         example: ee2fb143-6dfe-4787-b183-ca8ddd4164d2
-        format: uuid
+        pattern: ^[[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$
         type: string
       type:
         description: Name of the resource type
@@ -132,13 +133,12 @@ definitions:
         example: 0
         minimum: 0
         type: integer
+        x-nullable: true
       created_on:
-        format: date-time
-        type: string
+        type: integer
         x-nullable: true
       modified_on:
-        format: date-time
-        type: string
+        type: integer
         x-nullable: true
       attributes:
         properties:
@@ -154,12 +154,6 @@ definitions:
             example: EUR
             type: string
             x-length: 3
-          processing_date:
-            description: 'Date on which the payment is to be debited from the debtor
-              account. Formatted according to ISO 8601 format: YYYY-MM-DD.'
-            example: '2015-02-12'
-            format: date
-            type: string
           reference:
             description: Payment reference for beneficiary use
             example: rent for oct
@@ -192,10 +186,15 @@ definitions:
                 x-length: 34
             type: object
         type: object
-    required: [id, organisation_id, attributes]
+    required: [organisation_id, attributes]
     type: object
 
   PaymentCreation:
+    properties:
+      data: {$ref: '#/definitions/Payment'}
+    type: object
+
+  PaymentUpdate:
     properties:
       data: {$ref: '#/definitions/Payment'}
     type: object
@@ -211,7 +210,6 @@ definitions:
       data:
         items: {$ref: '#/definitions/Payment'}
         type: array
-      links: {$ref: '#/definitions/Links'}
     type: object
 
   PaymentDetailsResponse:
@@ -219,4 +217,3 @@ definitions:
       data: {$ref: '#/definitions/Payment'}
       links: {$ref: '#/definitions/Links'}
     type: object
-

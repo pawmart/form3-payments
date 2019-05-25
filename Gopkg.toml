@@ -26,20 +26,52 @@
 
 
 [[constraint]]
-  name = "github.com/DATA-DOG/godog"
-  version = "0.7.13"
+  name = "github.com/alexflint/go-arg"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/gin-gonic/gin"
   version = "1.4.0"
 
 [[constraint]]
-  name = "github.com/imdario/mergo"
-  version = "0.3.7"
+  name = "github.com/go-openapi/errors"
+  version = "0.19.0"
 
 [[constraint]]
-  name = "github.com/satori/go.uuid"
-  version = "1.2.0"
+  name = "github.com/go-openapi/loads"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/go-openapi/runtime"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/go-openapi/spec"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/go-openapi/strfmt"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/go-openapi/swag"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/go-openapi/validate"
+  version = "0.19.0"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/micro/go-config"
+  version = "1.1.0"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"
 
 [[constraint]]
   branch = "v2"
