@@ -17,41 +17,37 @@ type Storage struct {
 // New storage instance creation.
 func New() (s *Storage) {
 	s = new(Storage)
-	s.init()
+	s.config = new(config.Config).LoadConfiguration().Db
 	return s
 }
 
-// Db dial and return.
-func (s *Storage) Db() (db *mgo.Database, err error) {
+func (s *Storage) getDB() (db *mgo.Database) {
+	if s.db != nil {
+		return s.db
+	}
 
 	conf := s.config
 	var session *mgo.Session
 
-	session, err = s.dial(s.config)
+	session, err := s.dial(s.config)
 	if err != nil {
-		return nil, err
+		log.Fatalln(err)
 	}
 
 	if conf.User != "" && conf.Password != "" {
 		err := session.Login(&mgo.Credential{Username: conf.User, Password: conf.Password, Source: conf.Auth})
 		if err != nil {
-			return nil, err
+			log.Fatalln(err)
 		}
 	}
 
 	session.SetSafe(&mgo.Safe{})
 
 	s.db = session.DB(conf.Database)
-	return s.db, nil
-}
-
-func (s *Storage) init() {
-	s.config = new(config.Config).LoadConfiguration().Db
-	return
+	return s.db
 }
 
 func (s *Storage) dial(conf *config.DbConfig) (*mgo.Session, error) {
-
 	// TODO: Enforce secure connection for production.
 	host := s.formatHost(conf)
 	sess, err := mgo.Dial(host)

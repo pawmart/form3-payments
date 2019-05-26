@@ -20,6 +20,9 @@ type PaymentDetailsListResponse struct {
 
 	// data
 	Data []*Payment `json:"data"`
+
+	// links
+	Links *Links `json:"links,omitempty"`
 }
 
 // Validate validates this payment details list response
@@ -27,6 +30,10 @@ func (m *PaymentDetailsListResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateData(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLinks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -56,6 +63,24 @@ func (m *PaymentDetailsListResponse) validateData(formats strfmt.Registry) error
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *PaymentDetailsListResponse) validateLinks(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Links) { // not required
+		return nil
+	}
+
+	if m.Links != nil {
+		if err := m.Links.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("links")
+			}
+			return err
+		}
 	}
 
 	return nil

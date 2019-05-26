@@ -6,19 +6,17 @@ import (
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	"github.com/imdario/mergo"
 	"github.com/pawmart/form3-payments/models"
-	"github.com/pawmart/form3-payments/restapi/operations"
-	"gopkg.in/mgo.v2/bson"
+	o "github.com/pawmart/form3-payments/restapi/operations"
+	"github.com/pawmart/form3-payments/storage"
 )
 
-const collectionName = "payments"
-
 // GetHealth handling.
-func GetHealth(params operations.GetHealthParams) middleware.Responder {
+func GetHealth(params o.GetHealthParams) middleware.Responder {
 
-	db := connectToStorage()
-	err := db.Session.Ping()
+	err := storage.New().Ping()
 
 	result := new(models.Health)
 	result.Status = "up"
@@ -27,66 +25,56 @@ func GetHealth(params operations.GetHealthParams) middleware.Responder {
 		result.Status = "down"
 	}
 
-	return operations.NewGetHealthOK().WithPayload(result)
+	return o.NewGetHealthOK().WithPayload(result)
 }
 
 // GetPayments handling.
-func GetPayments(params operations.GetPaymentsParams) middleware.Responder {
+func GetPayments(params o.GetPaymentsParams) middleware.Responder {
 
 	var err error
-	var result []*models.Payment
-	db := connectToStorage()
 
-	shouldFilter := false
-	for _, k := range params.FilterOrganisationID {
-		log.Print("dealing with organisation " + k.String())
-		shouldFilter = true
-	}
-	if shouldFilter {
-		var mQueries []bson.M
-		for _, v := range params.FilterOrganisationID {
-			mQueries = append(mQueries, bson.M{"organisationid": v.String()})
-		}
-		err = db.C(collectionName).Find(bson.D{{"$and", mQueries}}).All(&result)
-	} else {
-		err = db.C(collectionName).Find(nil).All(&result)
-	}
+	s := storage.New()
+	result := s.FindPayments(params)
 	if err != nil {
 		log.Print("could not list resources, db query problems", params)
 	}
 
 	resp := new(models.PaymentDetailsListResponse)
 	resp.Data = result
+	resp.Links = &models.Links{Self: new(o.GetPaymentsURL).String()}
 
-	return operations.NewGetPaymentsOK().WithPayload(resp)
+	return o.NewGetPaymentsOK().WithPayload(resp)
 }
 
 // FetchPayment handling.
-func FetchPayment(params operations.GetPaymentsIDParams) middleware.Responder {
+func FetchPayment(params o.GetPaymentsIDParams) middleware.Responder {
 
-	p := new(models.Payment)
-	db := connectToStorage()
-	err := db.C(collectionName).Find(bson.M{"id": params.ID}).One(p)
-	if err != nil || p.ID == "" {
-		return operations.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
+	s := storage.New()
+	p, err := s.FindPayment(params.ID.String())
+	if err != nil {
+		return o.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
 			ErrorCode:    string(http.StatusNotFound),
 			ErrorMessage: "not found",
 		})
 	}
 
+	selfUrl := new(o.GetPaymentsIDURL)
+	selfUrl.ID = strfmt.UUID(p.ID)
+
 	pd := new(models.PaymentDetailsResponse)
 	pd.Data = p
 	pd.Links = &models.Links{Self: "/v1/payments/" + p.ID}
+	pd.Links = &models.Links{Self: selfUrl.String()}
 
-	return operations.NewGetPaymentsIDOK().WithPayload(pd)
+	return o.NewGetPaymentsIDOK().WithPayload(pd)
 }
 
 // CreatePayment handling.
-func CreatePayment(params operations.PostPaymentsParams) middleware.Responder {
+func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 
 	pd := params.PaymentCreationRequest
 	if pd.Data == nil {
-		return operations.NewPostPaymentsBadRequest().WithPayload(&models.APIError{
+		return o.NewPostPaymentsBadRequest().WithPayload(&models.APIError{
 			ErrorCode: string(http.StatusBadRequest), ErrorMessage: "bad request"})
 	}
 
@@ -99,80 +87,65 @@ func CreatePayment(params operations.PostPaymentsParams) middleware.Responder {
 	pd.Data.CreatedOn = &t
 	pd.Data.ModifiedOn = &t
 
-	db := connectToStorage()
-	if err := db.C(collectionName).Insert(pd.Data); err != nil {
-		log.Print("could not insert resource, db query problems")
+	s := storage.New()
+	if err := s.InsertPayment(pd.Data); err != nil {
+		log.Print("could not insert resource, db query problems", err)
 	}
 
 	// Now get it...
-	p := new(models.Payment)
-
-	err := db.C(collectionName).Find(bson.M{"id": id}).One(p)
-	if err != nil || p.ID == "" {
-
-		if err != nil {
-			log.Print("Failed to find resource ", err.Error())
-		}
-		return operations.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
+	p, err := s.FindPayment(id)
+	if err != nil {
+		return o.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
 			ErrorCode:    string(http.StatusNotFound),
 			ErrorMessage: "not found",
 		})
 	}
 
+	selfUrl := new(o.GetPaymentsIDURL)
+	selfUrl.ID = strfmt.UUID(p.ID)
+
 	pdr := new(models.PaymentCreationResponse)
 	pdr.Data = p
-	pdr.Links = &models.Links{Self: "/v1/payments/" + id}
+	pdr.Links = &models.Links{Self: selfUrl.String()}
 
-	return operations.NewPostPaymentsCreated().WithPayload(pdr)
+	return o.NewPostPaymentsCreated().WithPayload(pdr)
 }
 
 // UpdatePayment handling.
-func UpdatePayment(params operations.PatchPaymentsParams) middleware.Responder {
-
-	log.Print("initial UpdatePayment")
+func UpdatePayment(params o.PatchPaymentsParams) middleware.Responder {
 
 	src := params.PaymentUpdateRequest.Data
 
-	log.Print("SRC ", src)
-	log.Print("REF to update ", src.Attributes.Reference)
-
-	dst := new(models.Payment)
 	id := src.ID
-	db := connectToStorage()
-	if err := db.C(collectionName).Find(bson.M{"id": id}).One(dst); err != nil || dst.ID == "" {
-		return operations.NewPatchPaymentsNotFound().WithPayload(&models.APIError{
+	s := storage.New()
+	dst, err := s.FindPayment(id)
+	if err != nil {
+		return o.NewPatchPaymentsNotFound().WithPayload(&models.APIError{
 			ErrorCode: string(http.StatusNotFound), ErrorMessage: "not found"})
 	}
-
-	log.Print("REF fetched", dst.Attributes.Reference)
-	log.Print("MOD fetched", dst.ModifiedOn)
-	log.Print("CRE fetched", dst.CreatedOn)
 
 	t := time.Now().Unix()
 	dst.ModifiedOn = &t
 
 	if err := mergo.Merge(dst, src, mergo.WithOverride); err != nil {
-		log.Print(err.Error())
 		log.Print("resource not merged", src, dst, err.Error())
 	}
 
-	log.Print("REF after merge", dst.Attributes.Reference)
-
-	if err := db.C(collectionName).Update(bson.M{"id": id}, dst); err != nil {
+	if err := s.UpdatePayment(id, dst); err != nil {
 		log.Print("resource not updated", dst, err.Error())
 	}
 
-	return operations.NewPatchPaymentsOK()
+	return o.NewPatchPaymentsOK()
 }
 
 // DeletePayment handling.
-func DeletePayment(params operations.DeletePaymentsIDParams) middleware.Responder {
+func DeletePayment(params o.DeletePaymentsIDParams) middleware.Responder {
 
-	db := connectToStorage()
-	if err := db.C(collectionName).Remove(bson.M{"id": params.ID}); err != nil {
-		return operations.NewDeletePaymentsIDNotFound().WithPayload(&models.APIError{
+	s := storage.New()
+	if err := s.RemovePayment(params.ID.String()); err != nil {
+		return o.NewDeletePaymentsIDNotFound().WithPayload(&models.APIError{
 			ErrorCode: string(http.StatusNotFound), ErrorMessage: "not found"})
 	}
 
-	return operations.NewDeletePaymentsIDNoContent()
+	return o.NewDeletePaymentsIDNoContent()
 }

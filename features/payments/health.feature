@@ -4,7 +4,6 @@ Feature: Check health
   So I can be sure I can interact with the API
 
   Background:
-    Given I am authenticated to the API
     When I send a "GET" request to "/v1/health"
 
   Scenario: Success

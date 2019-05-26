@@ -3,9 +3,6 @@ Feature: Fetch a payment
   I want to get a payment
   So I can get details of the payment transaction
 
-  Background:
-    Given I am authenticated to the API
-
   Scenario: Get payment
     When I send a "GET" request to "/v1/payments/a8dfdf10-33fa-4301-b859-e19853641655"
     And the JSON response should contain payment data

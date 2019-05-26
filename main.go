@@ -26,10 +26,6 @@ func getAPIServer() *restapi.Server {
 		log.Fatalln(err)
 	}
 
-	// TODO: addd middleware
-	// TODO: ensure api key header is checked.
-	// TODO: inspect DATES on resource creation
-	// TODO: update modified on date on update and change status code to 200
 	// TODO: remove logs
 	// TODO: extract uuid logic and similar to the helper reducing dependencies
 	// TODO: try to match origigal json as close as possible
@@ -42,6 +38,7 @@ func getAPIServer() *restapi.Server {
 	api.GetPaymentsIDHandler = operations.GetPaymentsIDHandlerFunc(FetchPayment)
 	api.DeletePaymentsIDHandler = operations.DeletePaymentsIDHandlerFunc(DeletePayment)
 	server := restapi.NewServer(api)
+
 	server.ConfigureAPI()
 
 	return server

@@ -370,6 +370,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/Payment"
           }
+        },
+        "links": {
+          "$ref": "#/definitions/Links"
         }
       }
     },
@@ -748,6 +751,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/Payment"
           }
+        },
+        "links": {
+          "$ref": "#/definitions/Links"
         }
       }
     },

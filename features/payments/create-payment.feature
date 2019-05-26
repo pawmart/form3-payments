@@ -3,9 +3,6 @@ Feature: Create a payment
   I want to get payment
   So I can record a payment transaction
 
-  Background:
-    Given I am authenticated to the API
-
   Scenario: Create payment
     When I send a "POST" request to "/v1/payments" with:
     """

@@ -5,6 +5,7 @@ import (
 	"github.com/micro/go-config/source/env"
 )
 
+// DbConfig holding db mongo configuration.
 type DbConfig struct {
 	Database   string `json:"database,omitempty"`
 	Host       string `json:"host,omitempty"`
@@ -15,12 +16,15 @@ type DbConfig struct {
 	Replicaset string `json:"replicaset,omitempty"`
 }
 
+// Config holding app configuration.
 type Config struct {
 	Db *DbConfig `protobuf:"bytes,1,opt,name=db,proto3" json:"db,omitempty"`
 }
 
+// LoadConfiguration for the app.
 func (*Config) LoadConfiguration() *Config {
 
+	// TODO: Fetch config from Vault etc.
 	c := new(Config)
 
 	src := env.NewSource(

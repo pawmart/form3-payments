@@ -210,6 +210,7 @@ definitions:
       data:
         items: {$ref: '#/definitions/Payment'}
         type: array
+      links: {$ref: '#/definitions/Links'}
     type: object
 
   PaymentDetailsResponse:

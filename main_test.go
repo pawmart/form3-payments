@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,22 +18,20 @@ import (
 var handler http.Handler
 
 type featureState struct {
-	api    *operations.Form3paymentsAPI
-	resp   *httptest.ResponseRecorder
-	apikey string
+	api  *operations.Form3paymentsAPI
+	resp *httptest.ResponseRecorder
 }
 
 func (a *featureState) resetState(interface{}) {
 	a.resp = httptest.NewRecorder()
-	a.apikey = ""
 }
 
 func (a *featureState) prepareSuite() {
 
 	handler = getAPIServer().GetHandler()
 
-	db, _ := storage.New().Db()
-	db.DropDatabase()
+	s := storage.New()
+	s.Drop()
 
 	recordJSON := `{
             "id" : "b8dfdf10-33fa-4301-b859-e19853641651",
@@ -78,26 +75,20 @@ func (a *featureState) prepareSuite() {
             }
         }`
 
-	p := new(Payment)
-	p2 := new(Payment)
+	p := new(models.Payment)
+	p2 := new(models.Payment)
 	json.Unmarshal([]byte(recordJSON), p)
 	json.Unmarshal([]byte(recordJSON2), p2)
 
-	err := db.C("payments").Insert(p)
-	if err != nil {
+	if err := s.InsertPayment(p); err != nil {
 		fmt.Errorf("populate db failed")
 	}
-	err = db.C("payments").Insert(p2)
-	if err != nil {
+	if err := s.InsertPayment(p2); err != nil {
 		fmt.Errorf("populate db failed")
 	}
 }
 
 func (a *featureState) callEndpoint(method string, endpoint string, req *http.Request) {
-
-	if a.apikey != "" {
-		req.Header.Set("X-APIKEY", "abc")
-	}
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -122,10 +113,6 @@ func (a *featureState) iSendARequestToWith(method, endpoint string, body *gherki
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-
-	if a.apikey != "" {
-		req.Header.Set("X-APIKEY", "abc")
-	}
 	a.callEndpoint(method, endpoint, req)
 	return
 }
@@ -161,8 +148,6 @@ func (a *featureState) theJSONResponseShouldContainPaymentData() (err error) {
 	if err != nil {
 		return fmt.Errorf("could not unmarshal payment data response", pd, err.Error(), a.resp.Body.String())
 	}
-
-	log.Print(pd)
 
 	if pd.Data != nil && len(pd.Data.ID) > 0 {
 		return
@@ -221,20 +206,11 @@ func (a *featureState) theJSONResponseShouldContainNoPaymentDataCollection() (er
 		fmt.Errorf(err.Error())
 	}
 
-	log.Print(pd)
-	log.Print(pd.Data)
-
 	for _, v := range pd.Data {
 		return fmt.Errorf("payment data exists and it should not", pd, a.resp.Body.String(), v)
 	}
 
 	return
-}
-
-func (a *featureState) iAmAuthenticatedToTheAPI() error {
-
-	a.apikey = "abc"
-	return nil
 }
 
 func FeatureContext(s *godog.Suite) {
@@ -243,7 +219,6 @@ func FeatureContext(s *godog.Suite) {
 	s.BeforeSuite(api.prepareSuite)
 	s.BeforeScenario(api.resetState)
 
-	s.Step(`^I am authenticated to the API$`, api.iAmAuthenticatedToTheAPI)
 	s.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, api.iSendRequestTo)
 	s.Step(`^I send a "([^"]*)" request to "([^"]*)" with:$`, api.iSendARequestToWith)
 	s.Step(`^the response code should be (\d+)$`, api.theResponseCodeShouldBe)

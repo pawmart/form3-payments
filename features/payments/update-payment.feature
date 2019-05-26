@@ -3,10 +3,6 @@ Feature: Update payment
   I want to update a payment
   So I can change the state of the payment
 
-  Background:
-    Given I am authenticated to the API
-
-
   Scenario: Update payment
     When I send a "PATCH" request to "/v1/payments" with:
     """
