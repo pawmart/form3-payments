@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"log"
-
 	"github.com/pawmart/form3-payments/models"
 	"github.com/pawmart/form3-payments/restapi/operations"
 	"gopkg.in/mgo.v2/bson"
@@ -37,11 +35,10 @@ func (s *Storage) RemovePayment(id string) error {
 
 // FindPayments handling.
 func (s *Storage) FindPayments(params operations.GetPaymentsParams) []*models.Payment {
-
 	var q interface{}
 	shouldFilter := false
 	for _, k := range params.FilterOrganisationID {
-		log.Print("dealing with organisation " + k.String())
+		k.String()
 		shouldFilter = true
 	}
 	if shouldFilter {

@@ -31,7 +31,7 @@ func NewPatchPayments(ctx *middleware.Context, handler PatchPaymentsHandler) *Pa
 
 /*PatchPayments swagger:route PATCH /payments patchPayments
 
-PatchPayments patch payments API
+Patch payment
 
 */
 type PatchPayments struct {

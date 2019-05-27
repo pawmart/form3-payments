@@ -124,3 +124,47 @@ func (o *PatchPaymentsNotFound) WriteResponse(rw http.ResponseWriter, producer r
 		}
 	}
 }
+
+// PatchPaymentsInternalServerErrorCode is the HTTP code returned for type PatchPaymentsInternalServerError
+const PatchPaymentsInternalServerErrorCode int = 500
+
+/*PatchPaymentsInternalServerError Fatal error
+
+swagger:response patchPaymentsInternalServerError
+*/
+type PatchPaymentsInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.APIError `json:"body,omitempty"`
+}
+
+// NewPatchPaymentsInternalServerError creates PatchPaymentsInternalServerError with default headers values
+func NewPatchPaymentsInternalServerError() *PatchPaymentsInternalServerError {
+
+	return &PatchPaymentsInternalServerError{}
+}
+
+// WithPayload adds the payload to the patch payments internal server error response
+func (o *PatchPaymentsInternalServerError) WithPayload(payload *models.APIError) *PatchPaymentsInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the patch payments internal server error response
+func (o *PatchPaymentsInternalServerError) SetPayload(payload *models.APIError) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *PatchPaymentsInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}

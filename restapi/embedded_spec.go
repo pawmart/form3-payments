@@ -67,6 +67,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/PaymentDetailsListResponse"
             }
+          },
+          "500": {
+            "description": "Fatal error",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
           }
         }
       },
@@ -97,6 +103,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/ApiError"
             }
+          },
+          "500": {
+            "description": "Fatal error",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
           }
         }
       },
@@ -105,6 +117,7 @@ func init() {
           "application/vnd.api+json",
           "application/json"
         ],
+        "summary": "Patch payment",
         "parameters": [
           {
             "name": "Payment update request",
@@ -126,6 +139,12 @@ func init() {
           },
           "404": {
             "description": "Payment update not found",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
+          },
+          "500": {
+            "description": "Fatal error",
             "schema": {
               "$ref": "#/definitions/ApiError"
             }
@@ -166,6 +185,7 @@ func init() {
           "application/vnd.api+json",
           "application/json"
         ],
+        "summary": "Delete payment",
         "parameters": [
           {
             "type": "string",
@@ -447,6 +467,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/PaymentDetailsListResponse"
             }
+          },
+          "500": {
+            "description": "Fatal error",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
           }
         }
       },
@@ -477,6 +503,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/ApiError"
             }
+          },
+          "500": {
+            "description": "Fatal error",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
           }
         }
       },
@@ -485,6 +517,7 @@ func init() {
           "application/vnd.api+json",
           "application/json"
         ],
+        "summary": "Patch payment",
         "parameters": [
           {
             "name": "Payment update request",
@@ -506,6 +539,12 @@ func init() {
           },
           "404": {
             "description": "Payment update not found",
+            "schema": {
+              "$ref": "#/definitions/ApiError"
+            }
+          },
+          "500": {
+            "description": "Fatal error",
             "schema": {
               "$ref": "#/definitions/ApiError"
             }
@@ -546,6 +585,7 @@ func init() {
           "application/vnd.api+json",
           "application/json"
         ],
+        "summary": "Delete payment",
         "parameters": [
           {
             "type": "string",

@@ -31,7 +31,7 @@ func NewDeletePaymentsID(ctx *middleware.Context, handler DeletePaymentsIDHandle
 
 /*DeletePaymentsID swagger:route DELETE /payments/{id} deletePaymentsId
 
-DeletePaymentsID delete payments ID API
+Delete payment
 
 */
 type DeletePaymentsID struct {

@@ -26,10 +26,6 @@ func getAPIServer() *restapi.Server {
 		log.Fatalln(err)
 	}
 
-	// TODO: remove logs
-	// TODO: extract uuid logic and similar to the helper reducing dependencies
-	// TODO: try to match origigal json as close as possible
-
 	api := operations.NewForm3paymentsAPI(swaggerSpec)
 	api.GetHealthHandler = operations.GetHealthHandlerFunc(GetHealth)
 	api.GetPaymentsHandler = operations.GetPaymentsHandlerFunc(GetPayments)
@@ -37,8 +33,8 @@ func getAPIServer() *restapi.Server {
 	api.PatchPaymentsHandler = operations.PatchPaymentsHandlerFunc(UpdatePayment)
 	api.GetPaymentsIDHandler = operations.GetPaymentsIDHandlerFunc(FetchPayment)
 	api.DeletePaymentsIDHandler = operations.DeletePaymentsIDHandlerFunc(DeletePayment)
-	server := restapi.NewServer(api)
 
+	server := restapi.NewServer(api)
 	server.ConfigureAPI()
 
 	return server

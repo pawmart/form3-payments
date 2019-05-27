@@ -11,6 +11,7 @@ import (
 	"github.com/pawmart/form3-payments/models"
 	o "github.com/pawmart/form3-payments/restapi/operations"
 	"github.com/pawmart/form3-payments/storage"
+	"github.com/pawmart/form3-payments/utils"
 )
 
 // GetHealth handling.
@@ -37,6 +38,7 @@ func GetPayments(params o.GetPaymentsParams) middleware.Responder {
 	result := s.FindPayments(params)
 	if err != nil {
 		log.Print("could not list resources, db query problems", params)
+		return o.NewGetPaymentsInternalServerError()
 	}
 
 	resp := new(models.PaymentDetailsListResponse)
@@ -79,7 +81,7 @@ func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 	}
 
 	v := int64(1)
-	id := generateUUIDString()
+	id := utils.GenerateUUIDString()
 	t := time.Now().Unix()
 
 	pd.Data.ID = id
@@ -89,16 +91,15 @@ func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 
 	s := storage.New()
 	if err := s.InsertPayment(pd.Data); err != nil {
-		log.Print("could not insert resource, db query problems", err)
+		log.Print("could not insert resource, db problems", err)
+		return o.NewPostPaymentsInternalServerError()
 	}
 
 	// Now get it...
 	p, err := s.FindPayment(id)
 	if err != nil {
-		return o.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
-			ErrorCode:    string(http.StatusNotFound),
-			ErrorMessage: "not found",
-		})
+		log.Print("freshly created entity could not be fetched", id)
+		return o.NewPostPaymentsInternalServerError()
 	}
 
 	selfUrl := new(o.GetPaymentsIDURL)
@@ -129,10 +130,12 @@ func UpdatePayment(params o.PatchPaymentsParams) middleware.Responder {
 
 	if err := mergo.Merge(dst, src, mergo.WithOverride); err != nil {
 		log.Print("resource not merged", src, dst, err.Error())
+		return o.NewPatchPaymentsInternalServerError()
 	}
 
 	if err := s.UpdatePayment(id, dst); err != nil {
 		log.Print("resource not updated", dst, err.Error())
+		return o.NewPatchPaymentsInternalServerError()
 	}
 
 	return o.NewPatchPaymentsOK()

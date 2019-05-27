@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func generateUUIDString() string {
+func GenerateUUIDString() string {
 	uuID, err := uuid.NewV4()
 	if err != nil {
 		log.Print("could not generate UUID", err.Error())
