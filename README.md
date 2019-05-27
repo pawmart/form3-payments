@@ -3,6 +3,7 @@
 ## Instructions
 
 - `go get github.com/pawmart/form3-payments`
+- `cd ${GOPATH}/src/github.com/pawmart/form3-payments`
 - `make up` (executing tests, builds and runs the service)
 
 ## Misc
