@@ -1,0 +1,23 @@
+#############
+# Docs: https://github.com/micro/examples/blob/master/booking/docker-compose.yml
+#############
+
+version: '3.1'
+
+services:
+
+    service:
+        build:
+            dockerfile: Dockerfile
+            context: .
+        ports:
+            - 6543:6543
+
+    mongo:
+        image: mongo:3.4-jessie
+        container_name: avoco-mongo
+        ports:
+            - 27017:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: example

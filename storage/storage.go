@@ -10,15 +10,8 @@ import (
 
 // Storage struct.
 type Storage struct {
-	config *config.DbConfig
+	Config *config.DbConfig
 	db     *mgo.Database
-}
-
-// New storage instance creation.
-func New() (s *Storage) {
-	s = new(Storage)
-	s.config = new(config.Config).LoadConfiguration().Db
-	return s
 }
 
 func (s *Storage) getDB() (db *mgo.Database) {
@@ -26,10 +19,10 @@ func (s *Storage) getDB() (db *mgo.Database) {
 		return s.db
 	}
 
-	conf := s.config
+	conf := s.Config
 	var session *mgo.Session
 
-	session, err := s.dial(s.config)
+	session, err := s.dial(s.Config)
 	if err != nil {
 		log.Fatalln(err)
 	}

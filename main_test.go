@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/pawmart/form3-payments/config"
 	"github.com/pawmart/form3-payments/models"
 	"github.com/pawmart/form3-payments/restapi/operations"
 
@@ -30,7 +31,9 @@ func (a *featureState) prepareSuite() {
 
 	handler = getAPIServer().GetHandler()
 
-	s := storage.New()
+	cfg := new(config.Config).LoadConfiguration()
+	s := &storage.Storage{Config: cfg.Db}
+
 	s.Drop()
 
 	recordJSON := `{

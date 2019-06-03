@@ -5,6 +5,8 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"github.com/go-openapi/loads"
+	"github.com/pawmart/form3-payments/config"
+	"github.com/pawmart/form3-payments/storage"
 
 	"github.com/pawmart/form3-payments/restapi"
 	"github.com/pawmart/form3-payments/restapi/operations"
@@ -26,13 +28,17 @@ func getAPIServer() *restapi.Server {
 		log.Fatalln(err)
 	}
 
+	cfg := new(config.Config).LoadConfiguration()
+	s := &storage.Storage{Config: cfg.Db}
+	h := &PaymentsHandler{storage: s}
+
 	api := operations.NewForm3paymentsAPI(swaggerSpec)
-	api.GetHealthHandler = operations.GetHealthHandlerFunc(GetHealth)
-	api.GetPaymentsHandler = operations.GetPaymentsHandlerFunc(GetPayments)
-	api.PostPaymentsHandler = operations.PostPaymentsHandlerFunc(CreatePayment)
-	api.PatchPaymentsHandler = operations.PatchPaymentsHandlerFunc(UpdatePayment)
-	api.GetPaymentsIDHandler = operations.GetPaymentsIDHandlerFunc(FetchPayment)
-	api.DeletePaymentsIDHandler = operations.DeletePaymentsIDHandlerFunc(DeletePayment)
+	api.GetHealthHandler = operations.GetHealthHandlerFunc(h.GetHealth)
+	api.GetPaymentsHandler = operations.GetPaymentsHandlerFunc(h.GetPayments)
+	api.PostPaymentsHandler = operations.PostPaymentsHandlerFunc(h.CreatePayment)
+	api.PatchPaymentsHandler = operations.PatchPaymentsHandlerFunc(h.UpdatePayment)
+	api.GetPaymentsIDHandler = operations.GetPaymentsIDHandlerFunc(h.FetchPayment)
+	api.DeletePaymentsIDHandler = operations.DeletePaymentsIDHandlerFunc(h.DeletePayment)
 
 	server := restapi.NewServer(api)
 	server.ConfigureAPI()

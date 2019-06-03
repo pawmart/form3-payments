@@ -14,10 +14,15 @@ import (
 	"github.com/pawmart/form3-payments/utils"
 )
 
-// GetHealth handling.
-func GetHealth(params o.GetHealthParams) middleware.Responder {
+// Handler responsible for payments endpoints.
+type PaymentsHandler struct {
+	storage *storage.Storage
+}
 
-	err := storage.New().Ping()
+// GetHealth handling.
+func (h *PaymentsHandler) GetHealth(params o.GetHealthParams) middleware.Responder {
+
+	err := h.storage.Ping()
 
 	result := new(models.Health)
 	result.Status = "up"
@@ -30,12 +35,11 @@ func GetHealth(params o.GetHealthParams) middleware.Responder {
 }
 
 // GetPayments handling.
-func GetPayments(params o.GetPaymentsParams) middleware.Responder {
+func (h *PaymentsHandler) GetPayments(params o.GetPaymentsParams) middleware.Responder {
 
 	var err error
 
-	s := storage.New()
-	result := s.FindPayments(params)
+	result := h.storage.FindPayments(params)
 	if err != nil {
 		log.Print("could not list resources, db query problems", params)
 		return o.NewGetPaymentsInternalServerError()
@@ -49,10 +53,9 @@ func GetPayments(params o.GetPaymentsParams) middleware.Responder {
 }
 
 // FetchPayment handling.
-func FetchPayment(params o.GetPaymentsIDParams) middleware.Responder {
+func (h *PaymentsHandler) FetchPayment(params o.GetPaymentsIDParams) middleware.Responder {
 
-	s := storage.New()
-	p, err := s.FindPayment(params.ID.String())
+	p, err := h.storage.FindPayment(params.ID.String())
 	if err != nil {
 		return o.NewGetPaymentsIDNotFound().WithPayload(&models.APIError{
 			ErrorCode:    string(http.StatusNotFound),
@@ -72,7 +75,7 @@ func FetchPayment(params o.GetPaymentsIDParams) middleware.Responder {
 }
 
 // CreatePayment handling.
-func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
+func (h *PaymentsHandler) CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 
 	pd := params.PaymentCreationRequest
 	if pd.Data == nil {
@@ -89,7 +92,7 @@ func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 	pd.Data.CreatedOn = &t
 	pd.Data.ModifiedOn = &t
 
-	s := storage.New()
+	s := h.storage
 	if err := s.InsertPayment(pd.Data); err != nil {
 		log.Print("could not insert resource, db problems", err)
 		return o.NewPostPaymentsInternalServerError()
@@ -113,12 +116,12 @@ func CreatePayment(params o.PostPaymentsParams) middleware.Responder {
 }
 
 // UpdatePayment handling.
-func UpdatePayment(params o.PatchPaymentsParams) middleware.Responder {
+func (h *PaymentsHandler) UpdatePayment(params o.PatchPaymentsParams) middleware.Responder {
 
 	src := params.PaymentUpdateRequest.Data
 
 	id := src.ID
-	s := storage.New()
+	s := h.storage
 	dst, err := s.FindPayment(id)
 	if err != nil {
 		return o.NewPatchPaymentsNotFound().WithPayload(&models.APIError{
@@ -142,10 +145,9 @@ func UpdatePayment(params o.PatchPaymentsParams) middleware.Responder {
 }
 
 // DeletePayment handling.
-func DeletePayment(params o.DeletePaymentsIDParams) middleware.Responder {
+func (h *PaymentsHandler) DeletePayment(params o.DeletePaymentsIDParams) middleware.Responder {
 
-	s := storage.New()
-	if err := s.RemovePayment(params.ID.String()); err != nil {
+	if err := h.storage.RemovePayment(params.ID.String()); err != nil {
 		return o.NewDeletePaymentsIDNotFound().WithPayload(&models.APIError{
 			ErrorCode: string(http.StatusNotFound), ErrorMessage: "not found"})
 	}
